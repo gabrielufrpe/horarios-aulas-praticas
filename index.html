@@ -16,6 +16,9 @@
       margin-top: 20px;
       padding: 10px;
     }
+    select:disabled {
+      background-color: #eee;
+    }
   </style>
 </head>
 <body>
@@ -24,6 +27,10 @@
   <form id="form-redes">
     <label>Nome Completo:
       <input type="text" name="nome" required>
+    </label>
+
+    <label>E-mail:
+      <input type="email" name="email" required>
     </label>
 
     <label>Curso:
@@ -49,7 +56,7 @@
     <button type="submit">Enviar</button>
   </form>
 
-  <p id="mensagem"></p>
+  <p id="mensagem" style="margin-top:20px; font-weight:bold;"></p>
 
   <script>
     const horarios = [
@@ -100,12 +107,6 @@
           return;
         }
 
-        // remove valor anterior usado
-        allSelects.forEach(s => {
-          if (s !== current && s.value === value) s.value = "";
-        });
-
-        // Atualiza set
         prioridadesUsadas.clear();
         allSelects.forEach(s => {
           if (s.value) prioridadesUsadas.add(s.value);
@@ -123,21 +124,29 @@
       e.preventDefault();
 
       const form = e.target;
+      const checkboxes = form.querySelectorAll("input[type='checkbox']");
+      const peloMenosUmHorario = Array.from(checkboxes).some(cb => cb.checked);
+
+      if (!peloMenosUmHorario) {
+        alert("⚠️ Você deve selecionar pelo menos um horário disponível.");
+        return;
+      }
+
       const data = new FormData(form);
 
-      fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+      fetch("https://script.google.com/macros/s/AKfycbwA_8_YJowJGTF6Z5GJ9VaBfM9S1y5QCgPxN9dg_LWM7nziRC_v30QDicAaSlOdQE0/exec", {
         method: "POST",
         body: data,
       })
         .then(response => response.text())
         .then(msg => {
-          document.getElementById("mensagem").innerText = "Enviado com sucesso!";
+          document.getElementById("mensagem").innerText = "✔️ Formulário enviado com sucesso!";
           form.reset();
           document.querySelectorAll("select[name^='prioridade_']").forEach(s => s.disabled = true);
           prioridadesUsadas.clear();
         })
         .catch(err => {
-          document.getElementById("mensagem").innerText = "Erro ao enviar.";
+          document.getElementById("mensagem").innerText = "❌ Erro ao enviar. Tente novamente.";
           console.error(err);
         });
     });
