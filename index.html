@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Formulário de Redes</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    fieldset {
+      margin-top: 20px;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Formulário - Disciplina de Redes</h2>
+
+  <form id="form-redes">
+    <label>Nome Completo:
+      <input type="text" name="nome" required>
+    </label>
+
+    <label>Curso:
+      <select name="curso" required>
+        <option value="">Selecione</option>
+        <option value="Engenharia Elétrica">Engenharia Elétrica</option>
+        <option value="Engenharia Eletrônica">Engenharia Eletrônica</option>
+      </select>
+    </label>
+
+    <label>Período:
+      <select name="periodo" required>
+        <option value="">Selecione</option>
+        ${[...Array(10)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+      </select>
+    </label>
+
+    <fieldset>
+      <legend>Horários Disponíveis (escolha e defina prioridades únicas)</legend>
+      <div id="horarios-container"></div>
+    </fieldset>
+
+    <button type="submit">Enviar</button>
+  </form>
+
+  <p id="mensagem"></p>
+
+  <script>
+    const horarios = [
+      "Segunda 08h-10h", "Segunda 10h-12h", "Segunda 13h-15h", "Segunda 15h-17h",
+      "Terça 08h-10h", "Terça 10h-12h", "Terça 13h-15h", "Terça 15h-17h",
+      "Quarta 08h-10h", "Quarta 10h-12h", "Quarta 13h-15h", "Quarta 15h-17h",
+      "Quinta 08h-10h", "Quinta 10h-12h", "Quinta 13h-15h", "Quinta 15h-17h",
+      "Sexta 08h-10h", "Sexta 10h-12h", "Sexta 13h-15h", "Sexta 15h-17h"
+    ];
+
+    const container = document.getElementById("horarios-container");
+    const prioridadesUsadas = new Set();
+
+    horarios.forEach((h, index) => {
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.id = `h-${index}`;
+      checkbox.name = `horario_${index}`;
+      checkbox.dataset.index = index;
+
+      const label = document.createElement("label");
+      label.htmlFor = checkbox.id;
+      label.innerText = h;
+
+      const select = document.createElement("select");
+      select.name = `prioridade_${index}`;
+      select.disabled = true;
+
+      select.innerHTML = `<option value="">Sem prioridade</option>` +
+        [...Array(10)].map((_, i) => `<option value="${i + 1}">Prioridade ${i + 1}</option>`).join('');
+
+      checkbox.addEventListener("change", () => {
+        select.disabled = !checkbox.checked;
+        if (!checkbox.checked) {
+          if (select.value) prioridadesUsadas.delete(select.value);
+          select.value = "";
+        }
+      });
+
+      select.addEventListener("change", (e) => {
+        const current = e.target;
+        const allSelects = document.querySelectorAll("select[name^='prioridade_']");
+        const value = current.value;
+
+        if (value && prioridadesUsadas.has(value)) {
+          alert(`A prioridade ${value} já foi usada em outro horário.`);
+          current.value = "";
+          return;
+        }
+
+        // remove valor anterior usado
+        allSelects.forEach(s => {
+          if (s !== current && s.value === value) s.value = "";
+        });
+
+        // Atualiza set
+        prioridadesUsadas.clear();
+        allSelects.forEach(s => {
+          if (s.value) prioridadesUsadas.add(s.value);
+        });
+      });
+
+      const div = document.createElement("div");
+      div.appendChild(checkbox);
+      div.appendChild(label);
+      div.appendChild(select);
+      container.appendChild(div);
+    });
+
+    document.getElementById("form-redes").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const data = new FormData(form);
+
+      fetch("https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec", {
+        method: "POST",
+        body: data,
+      })
+        .then(response => response.text())
+        .then(msg => {
+          document.getElementById("mensagem").innerText = "Enviado com sucesso!";
+          form.reset();
+          document.querySelectorAll("select[name^='prioridade_']").forEach(s => s.disabled = true);
+          prioridadesUsadas.clear();
+        })
+        .catch(err => {
+          document.getElementById("mensagem").innerText = "Erro ao enviar.";
+          console.error(err);
+        });
+    });
+  </script>
+</body>
+</html>
